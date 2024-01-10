@@ -1,11 +1,17 @@
+from time import sleep
 from typer import Typer
 from PIL import Image, ImageDraw, ImageFont
+from rich.progress import Progress
 
 app = Typer()
 
 
 @app.command()
 def main(text: str, font_size: int = 100) -> None:
+    with Progress() as progress:
+        for n in progress.track(range(100)):
+            progress.print(n)
+            sleep(0.1)
     temp_image = Image.new("RGB", (1, 1))
     temp_draw = ImageDraw.Draw(temp_image)
     final_font = ImageFont.truetype("arial.ttf", size=font_size)
