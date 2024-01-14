@@ -1,7 +1,7 @@
 from typing import Annotated, Union
 from typer import Typer, Option
 from PIL.ImageFont import FreeTypeFont, truetype
-from PIL.Image import Image as ImageClass, new
+from PIL.Image import new
 from PIL.ImageDraw import Draw
 from os import scandir
 from fontTools.ttLib import TTLibError, TTFont
@@ -108,23 +108,26 @@ class Text2Img(Typer):
             font_name: Annotated[
                 str,
                 Option(
-                    help='Font to use, supports file names (ex. "arial.ttf") and font names (ex."Arial")',
+                    help='Font to use, supports file names (ex. "arial.ttf") and'
+                    ' font names (ex. "Arial")',
                     rich_help_panel="Font options",
                 ),
             ] = "arial.ttf",
             font_color: Annotated[
                 str,
                 Option(
-                    help='RGB values split with "," (ex. 255,255,255) symbol, or a hex value starting '
-                    'with "#" (ex. #FFFFFF) representing the color of the text on the image. Supports '
-                    "transparency by providing 4th value (ex. 255,255,255,255 or #FFFFFFFF)",
+                    help='RGB values split with "," (ex. 255,255,255) symbol, or'
+                    ' a hex value starting with "#" (ex. #FFFFFF) representing the'
+                    " color of the text on the image. Supports transparency by "
+                    "providing 4th value (ex. 255,255,255,255 or #FFFFFFFF)",
                     rich_help_panel="Font options",
                 ),
             ] = "255,255,255",
         ) -> int:
             font = self.select_font(font_name, font_size)
-            width, height = self.calculate_image_dimentions(text, font)
-            image = new("RGBA", (width, height), TRANSPARENT)
+            image = new(
+                "RGBA", self.calculate_image_dimentions(text, font), TRANSPARENT
+            )
             Draw(image).text((0, 0), text, font=font, fill=self.parse_color(font_color))
             image = image.crop(image.getbbox())
             image.save(f"{text.replace(' ', '_')}.png")
