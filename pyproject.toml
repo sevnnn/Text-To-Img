@@ -1,14 +1,15 @@
 [tool.poetry]
 name = "text-to-img"
 version = "0.1.0"
-description = ""
+description = "Transforms provided text to an image"
 authors = ["naaskel"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.12"
-typer = {extras = ["all"], version = "^0.9.0"}
+typer = { extras = ["all"], version = "^0.9.0" }
 pillow = "^10.2.0"
+fonttools = "^4.47.2"
 
 [tool.poetry.group.dev.dependencies]
 isort = "^5.13.2"
@@ -18,3 +19,6 @@ black = "^23.12.1"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+text-to-img = "text_to_img:app"
