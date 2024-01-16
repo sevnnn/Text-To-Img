@@ -1,7 +1,5 @@
 from enum import Enum
 
-TRANSPARENT = (0, 0, 0, 0)
-
 
 class Color(tuple[int, int, int], Enum):
     BLACK = (0, 0, 0)
@@ -13,9 +11,12 @@ class Color(tuple[int, int, int], Enum):
     YELLOW = (255, 255, 0)
     WHITE = (255, 255, 255)
 
+    @classmethod
+    def keys(cls) -> list[str]:
+        return [element.name for element in cls]
 
-def add_transparency(
-    color: tuple[int, int, int],
-    percentage: float = 0.0,
-) -> tuple[int, int, int, int]:
-    return (color[0], color[1], color[2], int(255 * (percentage / 100.0)))
+
+class OptionCategory(str, Enum):
+    FONT_OPTIONS = "Font options"
+    IMAGE_OPTIONS = "Image options"
+    FILE_OPTIONS = "File Options"

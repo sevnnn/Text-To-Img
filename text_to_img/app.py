@@ -1,4 +1,5 @@
-from typing import Annotated, Union
+from tempfile import TemporaryFile
+from typing import Annotated, Literal, Union
 from typer import Typer, Option
 from PIL.ImageFont import FreeTypeFont, truetype
 from PIL.Image import new
@@ -9,7 +10,7 @@ from rich import print
 from re import match
 
 
-from .colors import TRANSPARENT
+from .enums import Color, OptionCategory
 
 
 class Text2Img(Typer):
@@ -49,6 +50,9 @@ class Text2Img(Typer):
         color_str = color_str.strip()
         result = ()
 
+        if color_str.upper() in Color.keys():
+            return Color[color_str]
+
         if match(
             "^\\d\\d?\\d?\\s*,\\s*\\d\\d?\\d?\\s*,\\s*\\d\\d?\\d?(?:\\s*,\\s*\\d\\d?\\d?)?$",
             color_str,
@@ -81,6 +85,36 @@ class Text2Img(Typer):
 
         exit(1)
 
+    def parse_file_extensions(self, file_extension: str) -> str:
+        file_extension = file_extension.strip().lower()
+        if file_extension[0] == ".":
+            file_extension = file_extension[1:]
+
+        with TemporaryFile(
+            suffix=f".{file_extension}", delete_on_close=True
+        ) as tempfile:
+            temp_image = new("RGB", (1, 1))
+            try:
+                temp_image.save(tempfile.name)
+            except ValueError:
+                print(
+                    f':no_entry: [bold red]".{file_extension}" is not a valid file extension[/bold red]'
+                )
+
+                exit(1)
+
+        return file_extension
+
+    def determine_image_mode(self, file_name: str) -> Literal["RGBA", "RGB"]:
+        with TemporaryFile(suffix=f"{file_name}", delete_on_close=True) as tempfile:
+            temp_image = new("RGBA", (1, 1))
+            try:
+                temp_image.save(tempfile.name)
+
+                return "RGBA"
+            except:
+                return "RGB"
+
     def __read_fonts_folder(self) -> dict[str, str]:
         result = {}
 
@@ -102,7 +136,7 @@ class Text2Img(Typer):
                 int,
                 Option(
                     help="Font size in pixels",
-                    rich_help_panel="Font options",
+                    rich_help_panel=OptionCategory.FONT_OPTIONS,
                 ),
             ] = 100,
             font_name: Annotated[
@@ -110,7 +144,7 @@ class Text2Img(Typer):
                 Option(
                     help='Font to use, supports file names (ex. "arial.ttf") and'
                     ' font names (ex. "Arial")',
-                    rich_help_panel="Font options",
+                    rich_help_panel=OptionCategory.FONT_OPTIONS,
                 ),
             ] = "arial.ttf",
             font_color: Annotated[
@@ -119,17 +153,36 @@ class Text2Img(Typer):
                     help='RGB values split with "," (ex. 255,255,255) symbol, or'
                     ' a hex value starting with "#" (ex. #FFFFFF) representing the'
                     " color of the text on the image. Supports transparency by "
-                    "providing 4th value (ex. 255,255,255,255 or #FFFFFFFF)",
-                    rich_help_panel="Font options",
+                    "providing 4th value (ex. 255,255,255,255 or #FFFFFFFF). Also"
+                    ' supports some color words like "red", "green", "blue" etc.',
+                    rich_help_panel=OptionCategory.FONT_OPTIONS,
                 ),
             ] = "255,255,255",
-        ) -> int:
+            background_color: Annotated[
+                str,
+                Option(
+                    help='RGB values split with "," (ex. 255,255,255) symbol, or'
+                    ' a hex value starting with "#" (ex. #FFFFFF) representing the'
+                    " color of the backround. Supports transparency by "
+                    "providing 4th value (ex. 255,255,255,255 or #FFFFFFFF). Also"
+                    ' supports some color words like "red", "green", "blue" etc.',
+                    rich_help_panel=OptionCategory.IMAGE_OPTIONS,
+                ),
+            ] = "0,0,0,0",
+            file_extension: Annotated[
+                str, Option(help="Extension of generated file")
+            ] = "png",
+        ) -> None:
+            full_file_name = (
+                f"{text.replace(' ', '_')}.{self.parse_file_extensions(file_extension)}"
+            )
             font = self.select_font(font_name, font_size)
             image = new(
-                "RGBA", self.calculate_image_dimentions(text, font), TRANSPARENT
+                self.determine_image_mode(full_file_name),
+                self.calculate_image_dimentions(text, font),
+                self.parse_color(background_color),
             )
             Draw(image).text((0, 0), text, font=font, fill=self.parse_color(font_color))
             image = image.crop(image.getbbox())
-            image.save(f"{text.replace(' ', '_')}.png")
-
-            return 0
+            image.save(full_file_name)
+            print(f"[green]Generated file [bold]{full_file_name}[/bold][/green]")
