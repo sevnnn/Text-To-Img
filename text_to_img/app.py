@@ -1,6 +1,5 @@
-from tempfile import TemporaryFile
 from typing import Annotated, Literal, Union
-from typer import Typer, Option
+from typer import Typer, Option, BadParameter
 from PIL.ImageFont import FreeTypeFont, truetype
 from PIL.Image import new
 from PIL.ImageDraw import Draw
@@ -9,7 +8,9 @@ from fontTools.ttLib import TTLibError, TTFont
 from rich import print
 from re import match
 
+from text_to_img.callbacks import parse_file_extensions
 
+from .tempfile import TempFile
 from .enums import Color, OptionCategory
 
 
@@ -22,9 +23,9 @@ class Text2Img(Typer):
     def calculate_image_dimentions(
         self, text: str, font: FreeTypeFont
     ) -> tuple[int, int]:
-        temp_draw = Draw(new("RGB", (1, 1)))
+        tempdraw = Draw(new("RGB", (1, 1)))
 
-        return int(temp_draw.textlength(text, font)), font.size
+        return int(tempdraw.textlength(text, font)), font.size
 
     def select_font(self, font_name: str, font_size: int) -> FreeTypeFont:
         parsed_font_name = font_name.lower()
@@ -36,11 +37,7 @@ class Text2Img(Typer):
                 size=font_size,
             )
         except OSError:
-            print(
-                f":no_entry: [bold red]Font named '{font_name}' was not found.[/bold red]"
-            )
-
-            exit(1)
+            raise BadParameter(f'Font named "{font_name}" was not found')
 
         return font
 
@@ -79,41 +76,19 @@ class Text2Img(Typer):
 
             return result  # type: ignore
 
-        print(
-            f':no_entry: [bold red]Cannot parse "{color_str}" to color value[/bold red]'
-        )
+        raise BadParameter(f'Cannot parse "{color_str}" to color value')
 
-        exit(1)
-
-    def parse_file_extensions(self, file_extension: str) -> str:
-        file_extension = file_extension.strip().lower()
-        if file_extension[0] == ".":
-            file_extension = file_extension[1:]
-
-        with TemporaryFile(
-            suffix=f".{file_extension}", delete_on_close=True
-        ) as tempfile:
-            temp_image = new("RGB", (1, 1))
+    def determine_image_mode(self, file_extension: str) -> Literal["RGBA", "RGB"]:
+        tempfile = TempFile(file_extension)
+        with tempfile:
+            tempimage = new("RGBA", (1, 1))
             try:
-                temp_image.save(tempfile.name)
-            except ValueError:
-                print(
-                    f':no_entry: [bold red]".{file_extension}" is not a valid file extension[/bold red]'
-                )
-
-                exit(1)
-
-        return file_extension
-
-    def determine_image_mode(self, file_name: str) -> Literal["RGBA", "RGB"]:
-        with TemporaryFile(suffix=f"{file_name}", delete_on_close=True) as tempfile:
-            temp_image = new("RGBA", (1, 1))
-            try:
-                temp_image.save(tempfile.name)
-
-                return "RGBA"
+                tempimage.save(tempfile.tempfile_path)
+                image_mode = "RGBA"
             except:
-                return "RGB"
+                image_mode = "RGB"
+
+        return image_mode
 
     def __read_fonts_folder(self) -> dict[str, str]:
         result = {}
@@ -170,15 +145,26 @@ class Text2Img(Typer):
                 ),
             ] = "0,0,0,0",
             file_extension: Annotated[
-                str, Option(help="Extension of generated file")
+                str,
+                Option(
+                    help="Extension of generated file",
+                    rich_help_panel=OptionCategory.FILE_OPTIONS,
+                    callback=parse_file_extensions,
+                ),
             ] = "png",
+            output_path: Annotated[
+                str,
+                Option(
+                    help='Relative (ex. "./output") or absolute (ex. "C:\\Users\\output")'
+                    " file path, that will be used to save generated image",
+                    rich_help_panel=OptionCategory.FILE_OPTIONS,
+                ),
+            ] = ".",
         ) -> None:
-            full_file_name = (
-                f"{text.replace(' ', '_')}.{self.parse_file_extensions(file_extension)}"
-            )
+            full_file_name = f"{text.replace(' ', '_')}.{file_extension}"
             font = self.select_font(font_name, font_size)
             image = new(
-                self.determine_image_mode(full_file_name),
+                self.determine_image_mode(file_extension),
                 self.calculate_image_dimentions(text, font),
                 self.parse_color(background_color),
             )
