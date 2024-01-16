@@ -20,3 +20,18 @@ class OptionCategory(str, Enum):
     FONT_OPTIONS = "Font options"
     IMAGE_OPTIONS = "Image options"
     FILE_OPTIONS = "File Options"
+
+
+class OSFontsFolder(list[str], Enum):
+    WINDOWS = [
+        "C:\\Windows\\Fonts",
+    ]
+    LINUX = [
+        "/usr/share/fonts",
+        "/usr/local/share/fonts",
+        "~/local/share/fonts",
+    ]
+    MACOS = [
+        "/Library/Fonts/",
+    ]
+    UNKNOWN = []

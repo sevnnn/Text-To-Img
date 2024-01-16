@@ -1,6 +1,7 @@
 from os import scandir
 from os.path import join
 from re import match
+from sys import platform
 from typing import Annotated, Literal, Optional, Union
 
 from fontTools.ttLib import TTFont, TTLibError
@@ -16,7 +17,7 @@ from .callbacks import (
     parse_generic_text,
     parse_output_path,
 )
-from .enums import Color, OptionCategory
+from .enums import Color, OptionCategory, OSFontsFolder
 from .tempfile import TempFile
 
 
@@ -96,16 +97,34 @@ class Text2Img(Typer):
 
         return image_mode
 
+    def determine_platform(self) -> OSFontsFolder:
+        match platform:
+            case "linux" | "linux2":
+                return OSFontsFolder.LINUX
+            case "win32":
+                return OSFontsFolder.WINDOWS
+            case "darwin":
+                return OSFontsFolder.MACOS
+            case _:
+                print(
+                    "[yellow]:warning: Unsupported operating system. The app can"
+                    " only recognize font files by their names. Plase report this"
+                    f" issue on GitHub. (Detected platform: {platform})[/yellow]"
+                )
+
+                return OSFontsFolder.UNKNOWN
+
     def __read_fonts_folder(self) -> dict[str, str]:
         result = {}
 
-        for file in scandir("C:\\Windows\\Fonts"):
-            try:
-                font = TTFont(f"C:\\Windows\\Fonts\\{file.name}")
+        for fonts_folder in self.determine_platform():
+            for file in scandir(fonts_folder):
+                try:
+                    font = TTFont(join(fonts_folder, file))
 
-                result[font["name"].getDebugName(4).lower()] = file.name  # type: ignore
-            except TTLibError:
-                continue
+                    result[font["name"].getDebugName(4).lower()] = file.name  # type: ignore
+                except TTLibError:
+                    continue
 
         return result
 

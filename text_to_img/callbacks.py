@@ -1,4 +1,5 @@
 from os.path import exists
+from typing import Optional
 
 from PIL.Image import new
 from typer import BadParameter
@@ -32,7 +33,10 @@ def parse_output_path(output_path: str) -> str:
     return output_path
 
 
-def parse_file_name(file_name: str) -> str:
+def parse_file_name(file_name: Optional[str]) -> Optional[str]:
+    if file_name is None:
+        return file_name
+
     file_name = parse_generic_text(file_name)
     try:
         with TempFile("", file_name):
