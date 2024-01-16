@@ -1,14 +1,20 @@
-from typing import Annotated, Literal, Union
+from typing import Annotated, Literal, Optional, Union
 from typer import Typer, Option, BadParameter
 from PIL.ImageFont import FreeTypeFont, truetype
 from PIL.Image import new
 from PIL.ImageDraw import Draw
 from os import scandir
+from os.path import join
 from fontTools.ttLib import TTLibError, TTFont
 from rich import print
 from re import match
 
-from text_to_img.callbacks import parse_file_extensions
+from .callbacks import (
+    parse_file_extensions,
+    parse_file_name,
+    parse_generic_text,
+    parse_output_path,
+)
 
 from .tempfile import TempFile
 from .enums import Color, OptionCategory
@@ -120,6 +126,7 @@ class Text2Img(Typer):
                     help='Font to use, supports file names (ex. "arial.ttf") and'
                     ' font names (ex. "Arial")',
                     rich_help_panel=OptionCategory.FONT_OPTIONS,
+                    callback=parse_generic_text,
                 ),
             ] = "arial.ttf",
             font_color: Annotated[
@@ -131,6 +138,7 @@ class Text2Img(Typer):
                     "providing 4th value (ex. 255,255,255,255 or #FFFFFFFF). Also"
                     ' supports some color words like "red", "green", "blue" etc.',
                     rich_help_panel=OptionCategory.FONT_OPTIONS,
+                    callback=parse_generic_text,
                 ),
             ] = "255,255,255",
             background_color: Annotated[
@@ -142,6 +150,7 @@ class Text2Img(Typer):
                     "providing 4th value (ex. 255,255,255,255 or #FFFFFFFF). Also"
                     ' supports some color words like "red", "green", "blue" etc.',
                     rich_help_panel=OptionCategory.IMAGE_OPTIONS,
+                    callback=parse_generic_text,
                 ),
             ] = "0,0,0,0",
             file_extension: Annotated[
@@ -158,10 +167,20 @@ class Text2Img(Typer):
                     help='Relative (ex. "./output") or absolute (ex. "C:\\Users\\output")'
                     " file path, that will be used to save generated image",
                     rich_help_panel=OptionCategory.FILE_OPTIONS,
+                    callback=parse_output_path,
                 ),
             ] = ".",
+            file_name: Annotated[
+                Optional[str],
+                Option(
+                    help="Custom file name that will be used while saving generated image."
+                    " If not provided, will be parsed from the provided text",
+                    rich_help_panel=OptionCategory.FILE_OPTIONS,
+                    callback=parse_file_name,
+                ),
+            ] = None,
         ) -> None:
-            full_file_name = f"{text.replace(' ', '_')}.{file_extension}"
+            full_file_name = f"{file_name or text.replace(' ', '_')}.{file_extension}"
             font = self.select_font(font_name, font_size)
             image = new(
                 self.determine_image_mode(file_extension),
@@ -170,5 +189,5 @@ class Text2Img(Typer):
             )
             Draw(image).text((0, 0), text, font=font, fill=self.parse_color(font_color))
             image = image.crop(image.getbbox())
-            image.save(full_file_name)
+            image.save(join(output_path, full_file_name))
             print(f"[green]Generated file [bold]{full_file_name}[/bold][/green]")

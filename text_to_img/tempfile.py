@@ -6,8 +6,8 @@ from typing import Any, Optional, Type
 
 
 class TempFile:
-    def __init__(self, file_extension: str) -> None:
-        self.tempfile_path = join(gettempdir(), f"{urandom(16).hex()}.{file_extension}")
+    def __init__(self, file_extension: str, file_name: str = urandom(16).hex()) -> None:
+        self.tempfile_path = join(gettempdir(), f"{file_name}.{file_extension}")
 
     def __enter__(self) -> TextIOWrapper:
         self.opened_file = open(self.tempfile_path, "w")
