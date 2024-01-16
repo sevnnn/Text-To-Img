@@ -1,13 +1,14 @@
-from typing import Annotated, Literal, Optional, Union
-from typer import Typer, Option, BadParameter
-from PIL.ImageFont import FreeTypeFont, truetype
-from PIL.Image import new
-from PIL.ImageDraw import Draw
 from os import scandir
 from os.path import join
-from fontTools.ttLib import TTLibError, TTFont
-from rich import print
 from re import match
+from typing import Annotated, Literal, Optional, Union
+
+from fontTools.ttLib import TTFont, TTLibError
+from PIL.Image import new
+from PIL.ImageDraw import Draw
+from PIL.ImageFont import FreeTypeFont, truetype
+from rich import print
+from typer import BadParameter, Option, Typer
 
 from .callbacks import (
     parse_file_extensions,
@@ -15,9 +16,8 @@ from .callbacks import (
     parse_generic_text,
     parse_output_path,
 )
-
-from .tempfile import TempFile
 from .enums import Color, OptionCategory
+from .tempfile import TempFile
 
 
 class Text2Img(Typer):

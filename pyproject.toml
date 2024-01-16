@@ -13,8 +13,8 @@ fonttools = "^4.47.2"
 
 [tool.poetry.group.dev.dependencies]
 isort = "^5.13.2"
-autopep8 = "^2.0.4"
 black = "^23.12.1"
+autoflake = "^2.2.1"
 
 [build-system]
 requires = ["poetry-core"]
@@ -22,3 +22,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 text-to-img = "text_to_img:app"
+csfix = "text_to_img.csfix:csfix"
+
+[tool.isort]
+profile = "black"

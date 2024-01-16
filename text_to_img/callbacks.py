@@ -1,7 +1,9 @@
-from typer import BadParameter
-from .tempfile import TempFile
-from PIL.Image import new
 from os.path import exists
+
+from PIL.Image import new
+from typer import BadParameter
+
+from .tempfile import TempFile
 
 
 def parse_generic_text(text: str) -> str:
