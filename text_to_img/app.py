@@ -12,6 +12,7 @@ from rich import print
 from typer import BadParameter, Option, Typer
 
 from .callbacks import (
+    generic_positive_int,
     parse_file_extensions,
     parse_file_name,
     parse_generic_text,
@@ -32,7 +33,7 @@ class Text2Img(Typer):
     ) -> tuple[int, int]:
         tempdraw = Draw(new("RGB", (1, 1)))
 
-        return int(tempdraw.textlength(text, font)), font.size
+        return int(tempdraw.textlength(text, font) * 1.5), int(font.size * 1.5)
 
     def select_font(self, font_name: str, font_size: int) -> FreeTypeFont:
         parsed_font_name = font_name.lower()
@@ -137,6 +138,7 @@ class Text2Img(Typer):
                 Option(
                     help="Font size in pixels",
                     rich_help_panel=OptionCategory.FONT_OPTIONS,
+                    callback=generic_positive_int,
                 ),
             ] = 100,
             font_name: Annotated[
