@@ -11,6 +11,13 @@ def parse_generic_text(text: str) -> str:
     return text.strip().lower()
 
 
+def generic_positive_int(number: int) -> int:
+    if number <= 0:
+        raise BadParameter("Font size must be greater then 0")
+
+    return number
+
+
 def parse_file_extensions(file_extension: str) -> str:
     file_extension = parse_generic_text(file_extension)
     if file_extension[0] == ".":
@@ -27,6 +34,7 @@ def parse_file_extensions(file_extension: str) -> str:
 
 
 def parse_output_path(output_path: str) -> str:
+    output_path = parse_generic_text(output_path)
     if not exists(output_path):  # type: ignore
         raise BadParameter(f"Selected output folder ({output_path}) does not exist")
 

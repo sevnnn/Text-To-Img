@@ -12,6 +12,7 @@ from rich import print
 from typer import BadParameter, Option, Typer
 
 from .callbacks import (
+    generic_positive_int,
     parse_file_extensions,
     parse_file_name,
     parse_generic_text,
@@ -32,7 +33,7 @@ class Text2Img(Typer):
     ) -> tuple[int, int]:
         tempdraw = Draw(new("RGB", (1, 1)))
 
-        return int(tempdraw.textlength(text, font)), font.size
+        return int(tempdraw.textlength(text, font) * 1.5), int(font.size * 1.5)
 
     def select_font(self, font_name: str, font_size: int) -> FreeTypeFont:
         parsed_font_name = font_name.lower()
@@ -51,10 +52,10 @@ class Text2Img(Typer):
     def parse_color(
         self, color_str: str
     ) -> Union[tuple[int, int, int], tuple[int, int, int, int]]:
-        color_str = color_str.strip()
+        color_str = color_str.strip().upper()
         result = ()
 
-        if color_str.upper() in Color.keys():
+        if color_str in Color.keys():
             return Color[color_str]
 
         if match(
@@ -137,6 +138,7 @@ class Text2Img(Typer):
                 Option(
                     help="Font size in pixels",
                     rich_help_panel=OptionCategory.FONT_OPTIONS,
+                    callback=generic_positive_int,
                 ),
             ] = 100,
             font_name: Annotated[
@@ -155,7 +157,9 @@ class Text2Img(Typer):
                     ' a hex value starting with "#" (ex. #FFFFFF) representing the'
                     " color of the text on the image. Supports transparency by "
                     "providing 4th value (ex. 255,255,255,255 or #FFFFFFFF). Also"
-                    ' supports some color words like "red", "green", "blue" etc.',
+                    ' supports some color words like "red", "green", "blue" etc.'
+                    "If provided values are bigger then 255, they will be clamped"
+                    "to said value",
                     rich_help_panel=OptionCategory.FONT_OPTIONS,
                     callback=parse_generic_text,
                 ),
@@ -167,7 +171,9 @@ class Text2Img(Typer):
                     ' a hex value starting with "#" (ex. #FFFFFF) representing the'
                     " color of the backround. Supports transparency by "
                     "providing 4th value (ex. 255,255,255,255 or #FFFFFFFF). Also"
-                    ' supports some color words like "red", "green", "blue" etc.',
+                    ' supports some color words like "red", "green", "blue" etc.'
+                    "If provided values are bigger then 255, they will be clamped"
+                    "to said value",
                     rich_help_panel=OptionCategory.IMAGE_OPTIONS,
                     callback=parse_generic_text,
                 ),
