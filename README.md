@@ -57,9 +57,9 @@ Note that you will need to have dev packages installed to not be greeted with an
 
 ## Example
 
-![readme\console-preview.png](readme\console-preview.png)
+![readme/console-preview.png](readme/console-preview.png)
 
-![readme\console-help-preview.png](readme\console-help-preview.png)
+![readme/console-help-preview.png](readme/console-help-preview.png)
 
-![readme\example_image.png](readme\example_image.png)
+![readme/example_image.png](readme/example_image.png)
 
